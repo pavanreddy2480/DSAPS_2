@@ -40,11 +40,10 @@ namespace lib{
 
             void enlarge(){
                 curr_capacity=2*curr_capacity;
-                if(curr_capacity==0) curr_capacity=2;
                 T** temp=new T*[curr_capacity];
-                int new_start=((curr_capacity)/2)-1;
+                int new_start=((curr_capacity)/2);
                 int temp_idx=start;
-                for(int i=new_start;i<new_start+(sz);i++){
+                for(int i=new_start;i<new_start+(sz) && temp_idx>=0 ;i++){
                     temp[i]=arr[temp_idx];
                     temp_idx++;
                 }
@@ -62,15 +61,18 @@ namespace lib{
                 if(start+sz<=curr_capacity-1){
                     auto temp = new T;
                     *temp=x;
-                    arr[start+sz]=temp;
+                    if(start<0){
+                        start=0;
+                        arr[start]=temp;
+                    }
+                    else arr[start+sz]=temp;
                     // end++;
                 }
                 else{
                     enlarge();
                     auto temp = new T;
                     *temp=x;
-                    if(start<0) arr[0]=temp;
-                    else arr[start+sz]=temp;
+                    arr[start+sz]=temp;
                     // end++;
                 }
                 sz++;
@@ -84,6 +86,7 @@ namespace lib{
                     start--;
                 }
                 else{
+                    // if(start<0) start=0;
                     enlarge();
                     auto temp=new T;
                     *temp=x;
@@ -134,7 +137,6 @@ namespace lib{
             }
 
             bool empty(){
-                cout<<"size: "<<sz<<endl;
                 return sz==0 ;
             }
 
@@ -185,7 +187,6 @@ namespace lib{
                     for(int i=sz;i<n;i++){
                         temp[i]=new T();
                     }
-                    sz=n;
                 }
                 else{
                     int idx=start;
@@ -193,10 +194,10 @@ namespace lib{
                         temp[i]=arr[idx];
                         idx++;
                     }
-                    sz=n;
                 }
                 start=0;
                 curr_capacity=n;
+                sz=n;
                 delete[] arr;
                 arr=temp;
             }
@@ -213,7 +214,6 @@ namespace lib{
                         temp[i]=new T();
                         *temp[i]=x;
                     }
-                    sz=n;
                 }
                 else{
                     int idx=start;
@@ -221,10 +221,10 @@ namespace lib{
                         temp[i]=arr[idx];
                         idx++;
                     }
-                    sz=n;
                 }
                 start=0;
                 curr_capacity=n;
+                sz=n;
                 delete[] arr;
                 arr=temp;
             }
@@ -234,11 +234,10 @@ namespace lib{
                     for(int i=start;i<start+sz;i++){
                         cout<<"Index: "<<i<<" value: "<<*arr[i]<<endl;
                     }
-                    cout<<"Size: "<<this->size()<<endl;
-                    cout<<"Capacity: "<<curr_capacity<<endl;
-                    cout<<endl;
                 }
-                
+                cout<<"Size: "<<this->size()<<endl;
+                cout<<"Capacity: "<<curr_capacity<<endl;
+                cout<<endl;
             }
     };
 }
@@ -271,9 +270,11 @@ int main(){
 
     da.print();
     da.reserve(10);
-    // da.resize(5,5);
+    da.print();
+    
+    da.resize(5,5);
     // da.shrink_to_fit();
-    da.clear();
+    // da.clear();
     cout<<"Empty : "<<da.empty()<<endl;
     da.print();
     // cout<<da[2]<<endl;
