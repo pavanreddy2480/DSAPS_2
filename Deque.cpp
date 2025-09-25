@@ -53,9 +53,13 @@ namespace lib{
 
             
 
-            T operator [](int idx){
+            T& operator [](int idx){
                 if(idx<0) idx=idx+sz;
-                if(idx<0 || idx>=sz) return T();
+                auto temp=new T();
+                if(idx<0 || idx>=sz){
+                    static T temp{};
+                    return temp;
+                }
                 return *arr[start+idx];
             }
 
@@ -175,48 +179,47 @@ namespace lib{
                 cout<<endl;
             }
     };
+    template<class T>
+    class randomized_queue{
+        public:
+            deque<T>dq;
+            void enqueue(T x){
+                dq.push_back(x);
+            }
+            T deque(){
+                int a=rand()%dq.size();
+                T element=dq[a];
+                dq[a]=dq[dq.size()-1];
+                dq.pop_back();
+                return element;
+            }
+            T sample(){
+                int a=rand()%dq.size();
+                return dq[a];
+            }
+    };
 }
 
 
 
 
 int main(){
-    lib::deque<int>d(3,5);
-    // lib::deque<int>da(2);
-    lib::deque<int>da;
-    // lib::deque<int>db();
-    da.print();
-    da.pop_back();
-    da.print();
-    da.push_back(3);
-    // da.push_back(3);
-
-    da.print();
-
-    da.push_front(5);
-    da.print();
-    da.pop_front();
-
-    // da.push_back(10);
-    // da.push_front(11);
-    // da.push_back(100);
-    // cout<<da.front()<<endl;
-    // cout<<da.back()<<endl;
-    // da.pop_front();
-    // da.pop_front();
-    // da.pop_front();
-
-    da.print();
-    da.reserve(10);
-    da.print();
-    
-    da.resize(5,8);
-    // da.shrink_to_fit();
-    // da.clear();
-    cout<<"Empty : "<<da.empty()<<endl;
-    da.print();
-    // cout<<da[2]<<endl;
-    // cout<<db.size()<<endl;
-    
+    // lib::deque<int>d(3,5);
+    lib::randomized_queue<int>rq;
+    while(true){
+        int choice;
+        cin>>choice;
+        if(choice==0){exit(0);}
+        else if(choice==1){
+            int x;cin>>x;
+            rq.enqueue(x);
+        }
+        else if(choice==2){
+            cout<<rq.deque()<<endl;
+        }
+        else if(choice==3){
+            cout<<rq.sample()<<endl;
+        }
+    }    
     return 0;
 }
