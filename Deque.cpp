@@ -10,7 +10,6 @@ namespace lib{
             int start=0;
             int curr_capacity=0;
             T** arr;
-            int a=0;
             int sz=0;
 
             void enlarge(bool front=false){
@@ -55,6 +54,7 @@ namespace lib{
             
 
             T operator [](int idx){
+                if(idx<0) idx=idx+sz;
                 if(idx<0 || idx>=sz) return T();
                 return *arr[start+idx];
             }
@@ -96,8 +96,9 @@ namespace lib{
             }
 
             T back(){
+                if(sz==0) return T();
                 int end=start+sz-1;
-                return (sz==0?T():*arr[end]);
+                return (*arr[end]);
             }
 
             int size(){
@@ -157,8 +158,7 @@ namespace lib{
                 if(n<sz){
                     for(int i=start+n;i<start+sz;i++) delete arr[i];
                 }
-                reserve(n);
-                T** temp=new T*[n];
+                if(n>curr_capacity)reserve(n);
                 for(int i=sz;i<n;i++) arr[i]=new T(x);
                 sz=n;
                 start=0;
