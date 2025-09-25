@@ -1,20 +1,36 @@
 #include<iostream>
+#include <cassert>
 using namespace std;
 
 
 namespace lib{
     template<class T>
     class deque{
-        public:
-            int start=-1;
+        private:
+            int start=0;
             int curr_capacity=0;
             T** arr;
             int a=0;
             int sz=0;
 
+            void enlarge(bool front=false){
+                curr_capacity=(!curr_capacity?1:2*curr_capacity);
+                T** temp=new T*[curr_capacity];
+                int new_start=(front?((curr_capacity-sz)/2)+1:(curr_capacity-sz)/2);
+                for(int i=0;i<sz;i++){
+                    temp[new_start+i]=arr[start+i];
+                }
+                delete[] arr;
+                arr=temp;
+                start=new_start;
+            }
+
+        public:
+
             deque(){
-                arr=new T*[1];
-                curr_capacity=1;
+                start=0;
+                arr=NULL;
+                curr_capacity=0;
             }
 
             deque(int n){
@@ -22,95 +38,51 @@ namespace lib{
                 for(int i=0;i<n;i++) arr[i]=new T();
                 curr_capacity=n;
                 start=0;
-                // end=n-1;
                 sz=n;
             }
             deque(int n,T x){
                 arr=new T*[n];
                 for(int i=0;i<n;i++){
-                    auto temp=new T;
-                    *temp=x;
-                    arr[i]=temp;
+                    arr[i]=new T(x);
                 }
                 start=0;
-                // end=n-1;
                 curr_capacity=n;
                 sz=n;
             }
 
-            void enlarge(){
-                curr_capacity=2*curr_capacity;
-                T** temp=new T*[curr_capacity];
-                int new_start=((curr_capacity)/2);
-                int temp_idx=start;
-                for(int i=new_start;i<new_start+(sz) && temp_idx>=0 ;i++){
-                    temp[i]=arr[temp_idx];
-                    temp_idx++;
-                }
-                delete[] arr;
-                arr=temp;
-                // end=new_start+(end-start);
-                start=new_start;
-            }
+            ~deque(){this->clear();}
+
+            
 
             T operator [](int idx){
+                if(idx<0 || idx>=sz) return T();
                 return *arr[start+idx];
             }
 
             void push_back(T x){
-                if(start+sz<=curr_capacity-1){
-                    auto temp = new T;
-                    *temp=x;
-                    if(start<0){
-                        start=0;
-                        arr[start]=temp;
-                    }
-                    else arr[start+sz]=temp;
-                    // end++;
-                }
-                else{
-                    enlarge();
-                    auto temp = new T;
-                    *temp=x;
-                    arr[start+sz]=temp;
-                    // end++;
-                }
+                if(sz==curr_capacity||start+sz>=curr_capacity) enlarge();
+                arr[start+sz]=new T(x);
                 sz++;
             }
 
             void push_front(T x){
-                if(start-1>=0){
-                    auto temp=new T;
-                    *temp=x;
-                    arr[start-1]=temp;
-                    start--;
-                }
-                else{
-                    // if(start<0) start=0;
-                    enlarge();
-                    auto temp=new T;
-                    *temp=x;
-                    arr[start-1]=temp;
-                    start--;
-                }
+                if(start==0||start+sz==curr_capacity) enlarge(true);
+                arr[--start]=new T(x);
                 sz++;
             }
 
             void pop_back(){
                 if(sz==0){
-                    cout<<"size is zero : no elements to pop"<<endl;
                     return;
                 }
                 int end=start+sz-1;
                 delete arr[end];
                 arr[end]=NULL;
-                // end--;
                 sz--;
             }
 
             void pop_front(){
                 if(sz==0){
-                    cout<<"size is zero : no elements to pop"<<endl;
                     return;
                 }
                 delete arr[start];
@@ -120,12 +92,12 @@ namespace lib{
             }
 
             T front(){
-                return *arr[start];
+                return (sz==0?T():*arr[start]);
             }
 
             T back(){
                 int end=start+sz-1;
-                return *arr[end];
+                return (sz==0?T():*arr[end]);
             }
 
             int size(){
@@ -143,23 +115,25 @@ namespace lib{
             void clear(){
                 for(int i=start;i<start+sz;i++){
                     delete arr[i];
-                    arr[i]=NULL;
                 }
-                start=-1;
+                delete[]arr;
+                arr=NULL;
+                start=0;
                 sz=0;
+                curr_capacity=0;
             }
 
             void reserve(int n){
                 if(n>curr_capacity){
                     T** temp=new T*[n];
-                    for(int i=0;i<curr_capacity;i++){
-                        temp[i]=arr[i];
+                    for(int i=0;i<sz;i++){
+                        temp[i]=arr[start+i];
                     }
                     delete[] arr;
                     arr=temp;
+                    start=0;
                     curr_capacity=n;
                 }
-                // sz=n;
             }
             void shrink_to_fit(){
                 int n=(sz);
@@ -173,60 +147,21 @@ namespace lib{
                 arr=temp;
                 curr_capacity=(n);
                 start=0;
-                // end=n-1;
             }
 
             void resize(int n){
-                T** temp=new T*[n];
-                if(n>sz){
-                    int idx=start;
-                    for(int i=0;i<sz;i++){
-                        temp[i]=arr[idx];
-                        idx++;
-                    }
-                    for(int i=sz;i<n;i++){
-                        temp[i]=new T();
-                    }
-                }
-                else{
-                    int idx=start;
-                    for(int i=0;i<n;i++){
-                        temp[i]=arr[idx];
-                        idx++;
-                    }
-                }
-                start=0;
-                curr_capacity=n;
-                sz=n;
-                delete[] arr;
-                arr=temp;
+                resize(n,T());
             }
 
             void resize(int n,T x){
+                if(n<sz){
+                    for(int i=start+n;i<start+sz;i++) delete arr[i];
+                }
+                reserve(n);
                 T** temp=new T*[n];
-                if(n>sz){
-                    int idx=start;
-                    for(int i=0;i<sz;i++){
-                        temp[i]=arr[idx];
-                        idx++;
-                    }
-                    for(int i=sz;i<n;i++){
-                        temp[i]=new T();
-                        *temp[i]=x;
-                    }
-                }
-                else{
-                    int idx=start;
-                    for(int i=0;i<n;i++){
-                        temp[i]=arr[idx];
-                        idx++;
-                    }
-                }
-                start=0;
-                curr_capacity=n;
+                for(int i=sz;i<n;i++) arr[i]=new T(x);
                 sz=n;
-                delete[] arr;
-                arr=temp;
+                start=0;
             }
 
             void print(){
@@ -254,7 +189,10 @@ int main(){
     da.pop_back();
     da.print();
     da.push_back(3);
+    // da.push_back(3);
+
     da.print();
+
     da.push_front(5);
     da.print();
     da.pop_front();
@@ -272,12 +210,13 @@ int main(){
     da.reserve(10);
     da.print();
     
-    da.resize(5,5);
+    da.resize(5,8);
     // da.shrink_to_fit();
     // da.clear();
     cout<<"Empty : "<<da.empty()<<endl;
     da.print();
     // cout<<da[2]<<endl;
     // cout<<db.size()<<endl;
+    
     return 0;
 }
