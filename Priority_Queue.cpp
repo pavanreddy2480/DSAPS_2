@@ -1,168 +1,132 @@
 #include<iostream>
-#include<algorithm>
+using namespace std;
 
-namespace lib{
-    template<class T>
-    class array{
-    public:
-        T* a;
-        int cap,sz;
-        array(){
-            a=nullptr;
-            cap=sz=0;
-        }
-        ~array(){
-            delete[] a;
-        }
-        void resize(int n){
-            T* b=new T[n];
-            for(int i=0;i<sz && i<n;i++) b[i]=a[i];
-            delete[] a;
-            a=b;
-            cap=n;
-        }
-        T& operator[](int i){
-            return a[i];
-        }
-    };
-    template<class T>
-    class priority_queue{
-    public:
-        int sz;
-        bool isMax;
-        array<T> v;
-        priority_queue(bool type=true){
-            sz=0;
-            v.resize(1);
-            isMax=type;
-        }
-        int size(){
-            return sz;
-        }
-        bool empty(){
-            return sz==0;
-        }
-        T top(){
-            return v[0];
-        }
-        void push(T x){
-            if(sz==v.cap) v.resize(std::max(1,2*v.cap));
-            v[sz]=x;
-            push_up(sz++);
-        }
-        void pop(){
-            std::swap(v[0],v[--sz]);
-            push_down(0);
-        }
-    private:
-        bool cmp(T a,T b){
-            return isMax?a>b:a<b;
-        }
-        void push_down(int idx){
-            int a=2*idx+1;
-            int b=2*idx+2;
-            int best=idx;
-            if(a<sz&&cmp(v[a],v[best])) best=a;
-            if(b<sz&&cmp(v[b],v[best])) best=b;
-            if(best!=idx){
-                std::swap(v[idx],v[best]);
-                push_down(best);
-            }
-        }
-        void push_up(int idx){
-            if(idx==0) return;
-            int par=(idx-1)/2;
-            if(cmp(v[idx],v[par])){
-                std::swap(v[idx],v[par]);
-                push_up(par);
-            }
-        }
-    };
-}
+namespace lib {
+  class priority_queue {
+  private:
+    int*arr;
+    int sz;
+    int cap;
+    bool isMin;
+    void swap(int&a,int&b){
+      int t=a;
+      a=b;
+      b=t;
+    }
+    void heapify_up(int i){
+      if(i==0) return;
+      int p=(i-1)/2;
+      bool c=isMin?(arr[i]<arr[p]):(arr[i]>arr[p]);
+      if(c){
+        swap(arr[i],arr[p]);
+        heapify_up(p);
+      }
+    }
+    void heapify_down(int i){
+      int l=2*i+1,r=2*i+2,t=i;
+      if(l<sz){
+        bool c=isMin?(arr[l]<arr[t]):(arr[l]>arr[t]);
+        if(c) t=l;
+      }
+      if(r<sz){
+        bool c=isMin?(arr[r]<arr[t]):(arr[r]>arr[t]);
+        if(c) t=r;
+      }
+      if(t!=i){
+        swap(arr[i],arr[t]);
+        heapify_down(t);
+      }
+    }
+    void resize(){
+      int old=cap;
+      cap=(cap==0?1:cap*2);
+      int*tmp=new int[cap];
+      for(int i=0;i<old;i++) tmp[i]=arr[i];
+      delete[]arr;
+      arr=tmp;
+    }
+  public:
+    priority_queue(bool m=false):arr(NULL),sz(0),cap(0),isMin(m){}
+    ~priority_queue(){delete[]arr;}
+    void push(int x){
+      if(sz==cap) resize();
+      arr[sz]=x;
+      sz++;
+      heapify_up(sz-1);
+    }
+    void pop(){
+      if(empty()) return;
+      arr[0]=arr[sz-1];
+      sz--;
+      if(!empty()) heapify_down(0);
+    }
+    int top(){
+      if(empty()) return 0;
+      return arr[0];
+    }
+    int size(){return sz;}
+    bool empty(){return sz==0;}
+  };
 
-struct Median{
-    lib::priority_queue<int> left,right;
-    int* freq;
-    int maxVal;
-    Median(int maxV):left(true),right(false){
-        maxVal=maxV;
-        freq=new int[maxVal+1]();
-    }
-    ~Median(){
-        delete[] freq;
-    }
-    void eraseTop(lib::priority_queue<int>&h){
-        while(!h.empty()&&freq[h.top()]>0){
-            freq[h.top()]--;
-            h.pop();
-        }
-    }
-    void insert(int x){
-        if(left.empty()||x<=left.top()) left.push(x);
-        else right.push(x);
-        balance();
-    }
-    void remove(int x){
-        freq[x]++;
-        if(!left.empty()&&x<=left.top()) eraseTop(left);
-        if(!right.empty()&&x>=right.top()) eraseTop(right);
-        balance();
-    }
+  class median_finder {
+  private:
+    priority_queue mx,mn;
+    int*lazy;
     void balance(){
-        eraseTop(left);
-        eraseTop(right);
-        if(left.size()>right.size()+1){
-            right.push(left.top());
-            left.pop();
-            eraseTop(left);
-        }
-        if(right.size()>left.size()){
-            left.push(right.top());
-            right.pop();
-            eraseTop(right);
-        }
+      while(!mx.empty()&&lazy[mx.top()]>0){
+        lazy[mx.top()]--;
+        mx.pop();
+      }
+      while(!mn.empty()&&lazy[mn.top()]>0){
+        lazy[mn.top()]--;
+        mn.pop();
+      }
+      if(mx.size()>mn.size()+1){
+        mn.push(mx.top());
+        mx.pop();
+      }
+      else if(mn.size()>mx.size()){
+        mx.push(mn.top());
+        mn.pop();
+      }
     }
-    double get(){
-        eraseTop(left);
-        eraseTop(right);
-        balance();
-        if(left.empty()&&right.empty()) return 0.0;
-        if(left.size()==right.size()){
-            return (left.top()+right.top())/2.0;
-        }
-        return left.top();
+  public:
+    median_finder():mx(false),mn(true){lazy=new int[100001]();}
+    ~median_finder(){delete[]lazy;}
+    void add(int x){
+      if(mx.empty()||x<=mx.top()) mx.push(x);
+      else mn.push(x);
+      balance();
     }
-};
+    void rem(int x){lazy[x]++;}
+    double median(){
+      balance();
+      if(mx.empty()&&mn.empty()) return 0.0;
+      if(mx.size()==mn.size()) return ((double)mx.top()+mn.top())/2.0;
+      return (double)mx.top();
+    }
+  };
+}
 
 int main(){
-    std::ios_base::sync_with_stdio(false);
-    std::cin.tie(NULL);
-    int n,d;
-    std::cin>>n>>d;
-    int* sales=new int[n];
-    int maxVal=0;
-    for(int i=0;i<n;i++){
-        std::cin>>sales[i];
-        if(sales[i]>maxVal) maxVal=sales[i];
+  ios::sync_with_stdio(false);
+  cin.tie(NULL);
+  int n,d;
+  cin>>n>>d;
+  int*sales=new int[n];
+  for(int i=0;i<n;i++) cin>>sales[i];
+  lib::median_finder win,tot;
+  int cnt=0;
+  for(int i=0;i<n;i++){
+    if(i>=d){
+      double mt=win.median(),mtot=tot.median();
+      if(sales[i]>=mt+mtot) cnt++;
     }
-    int ans=0;
-    Median trail(maxVal),prefix(maxVal);
-    for(int i=0;i<d;i++){
-        trail.insert(sales[i]);
-        prefix.insert(sales[i]);
-    }
-    for(int i=d;i<n;i++){
-        double med1=trail.get();
-        double med2=prefix.get();
-        if(sales[i]>=med1+med2){
-            ans++;
-        }
-        prefix.insert(sales[i]);
-        trail.insert(sales[i]);
-        trail.remove(sales[i-d]);
-    }
-    std::cout<<ans<<std::endl;
-    delete[] sales;
-    return 0;
+    tot.add(sales[i]);
+    win.add(sales[i]);
+    if(i>=d) win.rem(sales[i-d]);
+  }
+  cout<<cnt<<"\n";
+  delete[]sales;
+  return 0;
 }
-
